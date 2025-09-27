@@ -166,7 +166,7 @@ ggplot(kids_k12, aes(x = inf_adj_perchild, fill = region)) +
 
 **Interpret this plot in a few sentences.** What does this show?
 
-DO THAT HERE
+Most regions have low per-child spending on K-12 education, all clustered around \$5,000 to \$7,000. The main regional exception is the Northeast, which ranges around \$10,000ish per child.
 
 :::
 
@@ -219,7 +219,7 @@ ggplot(kids_lib, aes(x = inf_adj_perchild, y = factor(year), fill = region)) +
 
 **Interpret this plot in a few sentences.** What does this show?
 
-DO THAT HERE
+Since 1997, per-child spending on library services has steadily increased in the Northeast while remaining relatively constant in the South.
 
 :::
 
@@ -267,7 +267,7 @@ ggplot(kids_snap, aes(y = inf_adj_perchild, x = region)) +
 
 **Interpret this plot in a few sentences.** What does this show?
 
-DO THAT HERE
+The South spends more per child on SNAP benefits than other regions, though the West has a couple states that pull up the distribution a bit.
 
 :::
 
