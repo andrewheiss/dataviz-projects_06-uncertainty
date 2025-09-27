@@ -118,8 +118,8 @@ state_details <- read_csv("data/state_details.csv")
 # Load kids data and merge in state data
 kids <- read_csv("data/kids.csv") |>
   left_join(state_details, by = join_by(state)) |>
-  # These values are stored as 1000s of dollars, so this scales them back up by
-  # multiplying them by 1000
+  # These values are stored as 1000s of dollars, so this scales them 
+  # back up by multiplying them by 1000
   mutate(across(c(raw, inf_adj, inf_adj_perchild), \(x) x * 1000))
 ```
 
