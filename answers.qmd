@@ -1,0 +1,322 @@
+---
+title: "Uncertainty"
+subtitle: "Exercise 6 --- PMAP 8551/4551, SEMESTER YEAR"
+author: "YOUR NAME HERE"
+date: "DATE GOES HERE"
+date-format: "long"
+format:
+  html:
+    toc: true
+    knitr:
+      opts_chunk: 
+        dev: "ragg_png"
+        dpi: 300
+  typst:
+    toc: true
+    include-before-body: 
+      text: |
+        #show link: set text(fill: rgb("e16462"))
+
+        // Keep track of previous heading levels
+        #let last-heading-level = state("last-heading-level", 0)
+
+        // Add page breaks before all level 1 headings
+        // Add page breaks before level 2 headings that don't come after level 1
+        #show heading: it => {
+          context {
+            let prev-level = last-heading-level.get()
+
+            if it.level == 1 {
+              pagebreak(weak: true)
+              last-heading-level.update(1)
+            } else if it.level == 2 {
+              if prev-level != 1 {
+                pagebreak(weak: true)
+              }
+              last-heading-level.update(2)
+            } else {
+              last-heading-level.update(it.level)
+            }
+          }
+          it
+        }
+  pdf:
+    toc: true
+  docx:
+    toc: true
+---
+
+# Task 1: Session check-in
+
+::: {.callout-tip title="Answer"}
+Hopefully you wrote some interesting and muddy things!
+:::
+
+
+# Task 2: US public spending on children
+
+## Data description and cleaning
+
+This data comes from the [Urban Institute](https://datacatalog.urban.org/dataset/state-state-spending-kids-dataset), and it was a [#TidyTuesday dataset in September 2020](https://github.com/rfordatascience/tidytuesday/tree/main/data/2020/2020-09-15)
+
+This dataset is a little different from others you've worked with for a couple reasons!
+
+1. The data has a column for each state, but does not come with columns for US Census regions (i.e. South, West, Midwest, and Northeast) or US Census divisinos (e.g., Middle Atlantic, New England, Pacific, etc.). To give you those columns, I've included a second dataset in `data/state_details.csv` that contains these details—in the code below you'll use `left_join()` to merge this dataset with the main data.
+2. The main `data/kids.csv` file is long and tidy, which means that instead of having a column for education expenditures, a column for Pell Grants, a column for Head Start expenditures, and so on, there's one column called `variable` with rows for each of the different variables, like this:
+
+   ```default
+    state   variable       year      raw  inf_adj inf_adj_perchild 
+     <chr>   <chr>         <dbl>    <dbl>    <dbl>            <dbl>
+   1 Alabama PK12ed         1997 3271969  4665308.           3.93  
+   2 Alabama highered       1997  956505  1363824.           1.15  
+   3 Alabama edsubs         1997  107733   153610.           0.129 
+   4 Alabama edservs        1997  246057   350838.           0.296 
+   5 Alabama pell           1997  120833.  172289.           0.145 
+   6 Alabama HeadStartPriv  1997   55777.   79530.           0.0670
+   7 Alabama TANFbasic      1997   63818.   90994.           0.0766
+   ```
+
+   This means you'll need to use `filter()` to choose the different variables you want to work with:
+
+   ```{.r}
+   k12_spending <- kids |> 
+     filter(variable == "PK12ed")
+   ```
+
+After merging the two datasets, you'll have 9 columns in `kids`:
+
+- `state`: The state (including the District of Columbia)
+- `variable`: The variable being measured. There are 23 of these—[see the codebook here](https://jrosen48.github.io/tidykids/articles/tidykids-codebook.html) for a complete list. You'll be working with these in this exercise:
+  - `PK12ed`: Elementary and secondary education expenditures
+  - `SNAP`: Public spending on SNAP benefit payments that go to children
+  - `lib`: Public spending on libraries
+- `year`: The year
+- `raw`: The actual amount spent
+- `inf_adj`: The amount spent, adjusted to 2016 dollars
+- `inf_adj_perchild`: The amount spent *per child in the state*, adjusted to 2016 dollars
+- `state_abb`: The state abbreviation (e.g., AL, AK, AZ)
+- `region`: The [US Census region](https://en.wikipedia.org/wiki/List_of_regions_of_the_United_States) (South, West, Midwest, and Northeast)
+- `division`: The [US Census division](https://en.wikipedia.org/wiki/List_of_regions_of_the_United_States) (e.g., Middle Atlantic, New England, Pacific)
+
+The code below loads, merges, and cleans the two datasets, resulting in a data frame named `kids`. **You don't need to modify anything in this chunk of code---you only need to run it.**
+
+```{r}
+#| label: load-libraries-data
+#| warning: false
+#| message: false
+
+library(tidyverse) # For ggplot2, dplyr, and friends
+library(ggridges)  # For ridge plots
+library(gghalves)  # For half geoms
+
+# Make the randomness of jittering points the same every time you render this
+set.seed(1234)
+
+# Load state data
+state_details <- read_csv("data/state_details.csv")
+
+# Load kids data and merge in state data
+kids <- read_csv("data/kids.csv") |>
+  left_join(state_details, by = join_by(state)) |>
+  # These values are stored as 1000s of dollars, so this scales them back up by
+  # multiplying them by 1000
+  mutate(across(c(raw, inf_adj, inf_adj_perchild), \(x) x * 1000))
+```
+
+
+## Histograms
+
+Run the code chunk below to see a plot. It shows the distribution of **inflation-adjusted, per child spending** on **K-12 education** in **2010** across the four US Census regions.
+
+```{r fig.path="images/"}
+#| label: recreate-me-1
+#| echo: false
+#| ref.label: recreation-1
+```
+
+Use `ggplot()` and `geom_histogram()` in the chunk below to re-create the plot above using the `kids` dataset. **Some hints**:
+
+- You'll need to make a smaller filtered dataset first and then plot *that*, just like you did with exercise 3 and 4.
+  - You'll need to filter the data so it only includes rows for elementary and secondary education spending (`variable == "PK12ed"`)
+  - You'll need to filter the data so it only shows 2010 data
+- You'll need to facet by region and remove the legend
+- You'll need to choose a good binwidth (the image above uses $1,000 per bin)
+- The image above uses `theme_bw()`
+
+::: {.callout-tip title="Answer"}
+
+```{r}
+#| label: recreation-1
+
+kids_k12 <- kids |> 
+  filter(variable == "PK12ed", year == 2010)
+
+ggplot(kids_k12, aes(x = inf_adj_perchild, fill = region)) + 
+  geom_histogram(binwidth = 1000, color = "white") +
+  guides(fill = "none") +
+  labs(
+    title = "Spending on K-12 education per child in 2010",
+    subtitle = "Amounts adjusted for inflation to 2016 dollars",
+    x = "2016 dollars per child",
+    y = "Number of states"
+  ) +
+  facet_wrap(vars(region)) +
+  theme_bw()
+```
+
+**Interpret this plot in a few sentences.** What does this show?
+
+DO THAT HERE
+
+:::
+
+## Densities
+
+Run the code chunk below to see a plot. It shows the distribution of **inflation-adjusted, per child spending** on **libraries** in **the Northeast and the South** from 1997 to 2016.
+
+```{r fig.path="images/"}
+#| label: recreate-me-2
+#| echo: false
+#| message: false
+#| warning: false
+#| ref.label: recreation-plot-2
+```
+
+Use `ggplot()` and `geom_density_ridges()` in the chunk below to re-create the plot above using the `kids` dataset. **Some hints**:
+
+- You'll need to make a smaller filtered dataset first and then plot *that*, just like you did with exercise 3 and 4.
+  - You'll need to filter the data so it only includes rows for library spending (`variable == "lib"`)
+  - You'll need to filter the data so it only shows data for the south and northeast (`region %in% c("South", "Northeast")`)
+- You'll need to facet by region and remove the legend
+- If you use `y = year`, you'll get an error. `geom_density_ridges()` needs a categorical variable on the y-axis to work. You can convert `year` to categorical by making it a *factor* (what R calls categorical variables). You can do that inside `aes()`, like `aes(..., y = factor(year))`.
+- Add a white border to `geom_density_ridges()`
+- The image above uses `theme_light()` and it uses `theme()` to disable the major y-axis gridlines (`panel.grid.major.y = element_blank()`)
+
+::: {.callout-tip title="Answer"}
+
+```{r}
+#| label: recreation-plot-2
+#| message: false
+#| warning: false
+
+kids_lib <- kids |> 
+  filter(variable == "lib") |> 
+  filter(region %in% c("South", "Northeast"))
+
+ggplot(kids_lib, aes(x = inf_adj_perchild, y = factor(year), fill = region)) +
+  geom_density_ridges(color = "white") +
+  guides(fill = "none") +
+  labs(
+    title = "Spending on libraries per child",
+    subtitle = "Amounts adjusted for inflation to 2016 dollars",
+    x = "2016 dollars per child",
+    y = NULL
+  ) +
+  facet_wrap(vars(region)) +
+  theme_light() +
+  theme(panel.grid.major.y = element_blank())
+```
+
+**Interpret this plot in a few sentences.** What does this show?
+
+DO THAT HERE
+
+:::
+
+
+## Boxes, violins, and friends
+
+Run the code chunk below to see a plot. It shows the distribution of **inflation-adjusted, per child spending** on **SNAP** in **2016** across all four US census regions.
+
+```{r fig.path="images/"}
+#| label: recreate-me-3
+#| echo: false
+#| ref.label: recreation-plot-3
+#| message: false
+```
+
+Use `ggplot()` and `geom_half_point()` and `geom_half_violin()` in the chunk below to re-create the plot above using the `kids` dataset. **Some hints**:
+
+- You'll need to make a smaller filtered dataset first and then plot *that*, just like you did with exercise 3 and 4.
+  - You'll need to filter the data so it only includes rows for SNAP spending (`variable == "SNAP"`)
+  - You'll need to filter the data so it only shows data for 2016
+- You'll need to facet by region and remove the legend
+- The image above uses `theme_minimal()`
+
+
+::: {.callout-tip title="Answer"}
+
+```{r}
+#| label: recreation-plot-3
+#| message: false
+
+kids_snap <- kids |> 
+  filter(variable == "SNAP", year == 2016)
+
+ggplot(kids_snap, aes(y = inf_adj_perchild, x = region)) +
+  geom_half_point() +
+  geom_half_violin(aes(fill = region)) +
+  guides(fill = "none") +
+   labs(
+    title = "Spending on SNAP per child in 2016",
+    x = "2016 dollars per child",
+    y = NULL
+  ) +
+  theme_minimal()
+```
+
+**Interpret this plot in a few sentences.** What does this show?
+
+DO THAT HERE
+
+:::
+
+
+# Task 3: Extension
+
+Copy the code for one of your plots above and paste it into the chunk below. Do some extra things to it, like using a different variable (there are lots of them!), filtering for a specific region or division, looking at different years, changing the labels, changing the colors, adding a new geom, changing the theme, or whatever. **This is your chance to play around and explore.**
+
+::: {.callout-tip title="Answer"}
+
+Hopefully you did something neat! Here's something I did with the ridgeplot:
+
+```{r}
+#| label: extension
+#| message: false
+#| warning: false
+
+library(scales)  # For better labels, like label_dollar()
+
+kids_lib <- kids |> 
+  filter(variable == "lib") |> 
+  filter(region %in% c("South", "Northeast"))
+
+ggplot(
+  kids_lib,
+  aes(x = inf_adj_perchild, y = factor(year), fill = region)
+) +
+  geom_density_ridges(color = "white") +
+  guides(fill = "none") +
+  # These come from the CARTOColors Prism palette
+  # https://carto.com/carto-colors/
+  scale_fill_manual(values = c("#5F4690", "#E17C05")) +
+  scale_x_continuous(labels = label_dollar()) +
+  labs(
+    title = "Spending on libraries per child",
+    subtitle = "Amounts adjusted for inflation to 2016 dollars",
+    x = "2016 dollars per child",
+    y = NULL
+  ) +
+  facet_wrap(vars(region)) +
+  theme_bw() +
+  theme(
+    panel.grid.major.y = element_blank(),
+    plot.title = element_text(face = "bold"),
+    plot.subtitle = element_text(color = "grey50"),
+    axis.title.x = element_text(hjust = 0, face = "bold", size = rel(0.85)),
+    strip.text = element_text(hjust = 0, face = "bold"),
+    axis.ticks.y = element_blank()
+  )
+```
+
+:::
