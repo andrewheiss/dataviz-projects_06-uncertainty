@@ -61,7 +61,7 @@ This data comes from the [Urban Institute](https://datacatalog.urban.org/dataset
 
 This dataset is a little different from others you've worked with for a couple reasons!
 
-1. The data has a column for each state, but does not come with columns for US Census regions (i.e. South, West, Midwest, and Northeast) or US Census divisinos (e.g., Middle Atlantic, New England, Pacific, etc.). To give you those columns, I've included a second dataset in `data/state_details.csv` that contains these details—in the code below you'll use `left_join()` to merge this dataset with the main data.
+1. The data has a column for each state, but does not come with columns for US Census regions (i.e. South, West, Midwest, and Northeast) or US Census divisions (e.g., Middle Atlantic, New England, Pacific, etc.). To give you those columns, I've included a second dataset in `data/state_details.csv` that contains these details—in the code below you'll use `left_join()` to merge this dataset with the main data.
 2. The main `data/kids.csv` file is long and tidy, which means that instead of having a column for education expenditures, a column for Pell Grants, a column for Head Start expenditures, and so on, there's one column called `variable` with rows for each of the different variables, like this:
 
    ```default
